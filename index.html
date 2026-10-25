@@ -73,7 +73,7 @@ body:has(#panel.on) #tune{display:none!important}
 
 /* v28 landing: flat Android-dialer style list */
 #panel{--sf:system-ui,-apple-system,"Roboto","Segoe UI",Arial,sans-serif;position:fixed;inset:0;z-index:100;display:none;flex-direction:column;background:#fafafa;color:#171717;font-family:var(--sf);-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:contain}
-#panel.on{display:flex;animation:pIn .3s cubic-bezier(.2,.8,.2,1)}
+#panel.on{display:flex;animation:mdBack .3s cubic-bezier(.05,.7,.1,1)}
 @keyframes pIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #panel button{font-family:inherit;-webkit-tap-highlight-color:transparent;outline:0}
 #pnav{flex:none;height:calc(76px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(14px,calc(50% - 346px)) 0 max(20px,calc(50% - 340px));display:flex;align-items:center}
@@ -306,6 +306,19 @@ body:has(#note:not(.print)) #v2tb,body:has(#note:not(.print)) #v2tbPal,body:has(
 body:has(#note:not(.print)) #v2tb button:not([data-c=render]){color:var(--tfg)}
 body:has(#note:not(.print)) #v2tb .sz{color:var(--tfg)}
 body:has(#note:not(.print)) #v2tb i.sp{background:rgba(128,128,128,.3)}
+/* Android-style motion (Material emphasized-decelerate) */
+@keyframes mdPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+@keyframes mdFade{from{opacity:0}to{opacity:1}}
+@keyframes mdDlg{from{opacity:0;transform:scale(.88) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes mdOpen{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:none}}
+@keyframes mdBack{from{opacity:0;transform:translateX(-24px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes mdBar{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#pmenu.on,#emenu.on,#tune.on{transform-origin:top right;animation:mdPop .2s cubic-bezier(.05,.7,.1,1)}
+#v2tbPal,#v2tbFont,.wgt-menu.on{transform-origin:50% 100%;animation:mdPop .18s cubic-bezier(.05,.7,.1,1)}
+#v2tb{animation:mdBar .22s cubic-bezier(.05,.7,.1,1)}
+#pdlg.on{animation:mdFade .2s linear}#pdlg.on>*{animation:mdDlg .26s cubic-bezier(.05,.7,.1,1)}
+#note.enter{animation:mdOpen .3s cubic-bezier(.05,.7,.1,1)}
+@media (prefers-reduced-motion:reduce){#pmenu.on,#emenu.on,#tune.on,#v2tbPal,#v2tbFont,.wgt-menu.on,#v2tb,#pdlg.on,#pdlg.on>*,#note.enter,#panel.on{animation:none!important}}
 #tTh{display:flex;gap:10px}
 #tTh button{width:36px;height:36px;border-radius:50%;border:2px solid rgba(0,0,0,.18);padding:0;cursor:pointer}
 #tTh button.on{border-color:#171717;box-shadow:inset 0 0 0 2px #fff}
@@ -1482,7 +1495,21 @@ const V2TB=(function(){
     const part=rs.length>0;
     const t=part?rs.map(r=>d.textBetween(r.from,r.to,'\n','\n')).join('\n'):d.textBetween(0,d.content.size,'\n','\n');
     if(!t.trim()){ pop('none','Nothing to copy','The note is empty'); return; }
-    clipSet(t).then(()=>pop('ok',part?'Selection copied':'Whole note copied',t.length+' characters'),()=>pop('err','Copy failed','Try again'));
+    fmtClip=null; let html='';
+    try{
+      let sl=null;
+      if(part){ rs.forEach(r=>{ const x=d.slice(r.from,r.to); sl=sl?new x.constructor(sl.content.append(x.content),sl.openStart,x.openEnd):x; }); }
+      else sl=d.slice(0,d.content.size);
+      fmtClip={text:t,json:sl.toJSON()};
+      html=e.view.serializeForClipboard(sl).dom.innerHTML;
+    }catch(err){ console.error(err); }
+    clipSetRich(t,html).then(()=>pop('ok',part?'Selection copied':'Whole note copied',t.length+' characters'),()=>pop('err','Copy failed','Try again'));
+  }
+  let fmtClip=null;
+  function clipSetRich(t,html){
+    try{ if(html&&!(window.NotesNative&&typeof window.NotesNative.setClipboard==='function')&&window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+      return navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([t],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})})]).catch(()=>clipSet(t)); } }catch(_){}
+    return clipSet(t);
   }
   function insertPlain(e,t){
     const lines=t.replace(/\r\n?/g,'\n').split('\n');
@@ -1493,7 +1520,10 @@ const V2TB=(function(){
     clipGet().then(t=>{
       if(t===null){ pop('warn','Paste blocked','Long-press in the note and tap Paste'); return; }
       if(!t){ pop('none','Clipboard empty','Copy something first'); return; }
-      try{ if(box&&box.mode==='raw') TE.pasteRaw(box,t); else insertPlain(e,t); }
+      try{
+        if(box&&box.mode==='raw') TE.pasteRaw(box,t);
+        else if(fmtClip&&fmtClip.text===t){ const SL=e.state.doc.slice(0,0).constructor; e.view.focus(); e.view.dispatch(e.state.tr.replaceSelection(SL.fromJSON(e.state.schema,fmtClip.json)).scrollIntoView()); }
+        else insertPlain(e,t); }
       catch(err){ console.error(err); try{ e.chain().focus().insertContent(t).run(); }catch(_){} }
       pop('ok','Pasted',t.length+' characters'); sync();
     });
@@ -2970,6 +3000,11 @@ if(typeof TE!=='undefined'&&TE.widgetDialog){
 }
 })();
 
+</script>
+<script>
+(function(){var p=document.getElementById('panel'),n=document.getElementById('note');if(!p||!n)return;var was=p.classList.contains('on');
+new MutationObserver(function(){var on=p.classList.contains('on');if(was&&!on){n.classList.remove('enter');void n.offsetWidth;n.classList.add('enter');}was=on;}).observe(p,{attributes:true,attributeFilter:['class']});
+n.addEventListener('animationend',function(e){if(e.target===n)n.classList.remove('enter');});})();
 </script>
 </body>
 </html>
