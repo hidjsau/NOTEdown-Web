@@ -2,7 +2,7 @@
 <html lang="en" data-th="cream">
 <head>
 <meta charset="utf-8">
-<meta name="theme-color" content="#fafafa"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fafafa"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>NoteDown</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
@@ -1350,6 +1350,8 @@ const V2TB=(function(){
       const ff=b.dataset.font; runAll(c=>c.setMark('textStyle',{fontFamily:ff})); fpop.style.display='none'; sync(); });
     bindBox();
     if(window.visualViewport){ visualViewport.addEventListener('resize',place); visualViewport.addEventListener('scroll',place); }
+    window.addEventListener('resize',place); window.addEventListener('orientationchange',()=>setTimeout(place,300));
+    ['focusin','focusout'].forEach(ev=>document.addEventListener(ev,()=>{ [0,120,300,600,1000].forEach(t=>setTimeout(place,t)); },true));
     window.addEventListener('resize',place);
   }
   const ed=()=>box&&box.editor;
