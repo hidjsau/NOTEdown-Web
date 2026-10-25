@@ -113,8 +113,8 @@ body:has(#panel.on) #tune{display:none!important}
 #pundo button{border:0;background:none;color:#9ec5ff;font:600 15px/20px var(--sf);padding:8px 12px;cursor:pointer}
 /* docked bottom toolbar */
 body #v2tb,body #v2tbPal,body #v2tbFont{--fg:#3b3f66;--ac:#4f46e5;--tb-hov:#eef0ff;--gl-bd:rgba(20,22,43,.1);--gl-in:transparent;--gl-sh:rgba(20,22,43,.14);background:rgba(255,255,255,.94);color:#3b3f66}
-body #v2tb{left:0;right:0;transform:none;width:100%;max-width:100vw;gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px));border:0;border-top:1px solid rgba(20,22,43,.07);border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(20,22,43,.08)}
-body #v2tb button{border-radius:12px;height:40px;min-width:40px}
+body #v2tb{left:0;right:0;transform:none;width:100%;max-width:100vw;gap:2px;padding:3px 8px calc(3px + env(safe-area-inset-bottom,0px));border:0;border-top:1px solid rgba(20,22,43,.07);border-radius:22px 22px 0 0;box-shadow:0 -8px 28px rgba(20,22,43,.08)}
+body #v2tb button{border-radius:12px;height:36px;min-width:38px}
 body #v2tb [data-c=render]{background:linear-gradient(135deg,#818cf8,#4f46e5);color:#fff;padding:0 14px;font-weight:700;font-size:13px;margin-right:2px}
 body #v2tb i.sp{background:rgba(20,22,43,.1)}
 body #v2tbPal,body #v2tbFont{border:1px solid rgba(20,22,43,.08);box-shadow:0 12px 32px rgba(20,22,43,.18)}
@@ -1472,7 +1472,8 @@ const V2TB=(function(){
   }
   function place(){ // sit above the on-screen keyboard and the bottom safe area
     if(!el||el.style.display==='none') return;
-    const vv=window.visualViewport, kb=vv?Math.max(0,window.innerHeight-(vv.height+vv.offsetTop)):0;
+    const vv=window.visualViewport; el.style.bottom='0px'; const ae=document.activeElement; el.style.paddingBottom=(ae&&ae.isContentEditable)?'3px':'';
+    const vb=vv?vv.height+vv.offsetTop:window.innerHeight, kb=Math.max(0,Math.round(el.getBoundingClientRect().bottom-vb));
     el.style.bottom=kb+'px';
     const top=kb+el.offsetHeight+8, vh=vv?vv.height:innerHeight; // in a short WebView (keyboard open) the popups may overlap the bar rather than shrink to nothing
     fpop.style.maxHeight=Math.max(220,Math.min(300,vh-el.offsetHeight-24))+'px'; fpop.style.minHeight='220px';
