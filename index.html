@@ -293,15 +293,19 @@ body #v2tb [data-c=render] svg.rgbico{color:#4f46e5}
 
 </style>
 <style id="thcss">
-html[data-th=cream]{--tbg:#f4ecd8;--tfg:#2b2418}
-html[data-th=white]{--tbg:#ffffff;--tfg:#111111}
-html[data-th=sepia]{--tbg:#e9d8b8;--tfg:#40301e}
-html[data-th=mint]{--tbg:#dcebd8;--tfg:#1f2d1f}
-html[data-th=night]{--tbg:#1b1b1b;--tfg:#d6d6d6}
+html[data-th=cream]{--tbg:#f4ecd8;--tfg:#2b2418;--tbb:color-mix(in srgb,#f4ecd8 91%,#000)}
+html[data-th=white]{--tbg:#ffffff;--tfg:#111111;--tbb:color-mix(in srgb,#ffffff 94%,#000)}
+html[data-th=sepia]{--tbg:#e9d8b8;--tfg:#40301e;--tbb:color-mix(in srgb,#e9d8b8 91%,#000)}
+html[data-th=mint]{--tbg:#dcebd8;--tfg:#1f2d1f;--tbb:color-mix(in srgb,#dcebd8 91%,#000)}
+html[data-th=night]{--tbg:#1b1b1b;--tfg:#d6d6d6;--tbb:color-mix(in srgb,#1b1b1b 90%,#fff)}
 html:has(#note:not(.print)),body:has(#note:not(.print)){background:var(--tbg)}
 body:has(#note:not(.print)) #top,body:has(#note:not(.print)) #pbar{background:var(--tbg);border-bottom-color:rgba(128,128,128,.25)}
 body:has(#note:not(.print)) #top input,body:has(#note:not(.print)) #top button{color:var(--tfg)}
 #note:not(.print) .rendered.v2c{color:var(--tfg)}
+body:has(#note:not(.print)) #v2tb,body:has(#note:not(.print)) #v2tbPal,body:has(#note:not(.print)) #v2tbFont{background:var(--tbb);color:var(--tfg);--fg:var(--tfg);--tb-hov:color-mix(in srgb,var(--tbb) 85%,var(--tfg));--gl-bd:rgba(128,128,128,.25);border-color:rgba(128,128,128,.25)}
+body:has(#note:not(.print)) #v2tb button:not([data-c=render]){color:var(--tfg)}
+body:has(#note:not(.print)) #v2tb .sz{color:var(--tfg)}
+body:has(#note:not(.print)) #v2tb i.sp{background:rgba(128,128,128,.3)}
 #tTh{display:flex;gap:10px}
 #tTh button{width:36px;height:36px;border-radius:50%;border:2px solid rgba(0,0,0,.18);padding:0;cursor:pointer}
 #tTh button.on{border-color:#171717;box-shadow:inset 0 0 0 2px #fff}
@@ -687,6 +691,7 @@ const TE={
             if(!BLK.includes(tn)) return false;
             if(items.length&&ITEMS.includes($f.node($f.depth-1).type.name)&&$f.index($f.depth-1)===0) return TE.removeBullet(e);
             if(!items.length&&($f.parent.attrs.indent||0)>0){ e.commands.updateAttributes(tn,{indent:$f.parent.attrs.indent-1}); return true; }
+            if(!items.length){ const pv=$f.node($f.depth-1).maybeChild($f.index($f.depth-1)-1); if(pv&&LISTS.includes(pv.type.name)) return e.commands.joinTextblockBackward(); }   // line right after a list: move cursor to the end of the previous line (default join would wrap this line back into a bullet)
             return false;
           }
         };
@@ -1845,8 +1850,8 @@ const V2TB=(function(){
       element:rd,
       extensions:TE.EXTENSIONS,
       content:S.fmt,
-      autofocus:TE.isEmpty(S.fmt)?'end':false,
-      editorProps:{ handlePaste, handleDrop },
+      autofocus:(TE.isEmpty(S.fmt)&&kbOn)?'end':false,
+      editorProps:{ handlePaste, handleDrop, attributes:()=>({inputmode:kbOn?'text':'none'}) },
       onUpdate:()=>{ pull(); paint(); later(); autoSoon(); },
       onTransaction:()=>{ if(B.editor) V2TB.sync(); },
       onSelectionUpdate:()=>{ if(B.editor) V2TB.sync(); }
