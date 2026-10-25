@@ -2725,12 +2725,18 @@ function set(t){if(!T[t])t='cream';h.dataset.th=t;if(m)m.content=T[t];b.forEach(
 var s;try{s=localStorage.getItem(K);}catch(e){}
 set(s||'cream');
 b.forEach(function(x){x.onclick=function(){set(x.dataset.th);try{localStorage.setItem(K,x.dataset.th);}catch(e){}};});
-var RK='notes-rotation',rb=document.querySelectorAll('#tRot button');
-function rot(r,save){if(r!=='portrait'&&r!=='landscape')r='auto';rb.forEach(function(x){x.classList.toggle('on',x.dataset.ro===r);});if(save){try{localStorage.setItem(RK,r);}catch(e){}}
-var so=screen.orientation;try{if(r==='auto'){if(so&&so.unlock)so.unlock();}else if(so&&so.lock){var q=so.lock(r);if(q&&q.catch)q.catch(function(){});}}catch(e){}
+function msg(){var e=document.createElement('div');e.textContent='Rotation lock not supported on this device';e.style.cssText='position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:9999;background:#171717;color:#fff;padding:9px 14px;border-radius:12px;font:600 13px system-ui,sans-serif';document.body.appendChild(e);setTimeout(function(){e.remove();},2400);}
+var RK='notes-rotation',rb=document.querySelectorAll('#tRot button'),pend=null;
+function lockTo(r,g){var so=screen.orientation;return so.lock(r).catch(function(){if(!g)throw 0;var d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;if(!f||document.fullscreenElement)throw 0;return Promise.resolve(f.call(d)).then(function(){return so.lock(r);});});}
+function rot(r,g){if(r!=='portrait'&&r!=='landscape')r='auto';rb.forEach(function(x){x.classList.toggle('on',x.dataset.ro===r);});if(g){try{localStorage.setItem(RK,r);}catch(e){}}
+pend=null;var so=screen.orientation;
+try{if(r==='auto'){if(document.fullscreenElement&&document.exitFullscreen&&g)document.exitFullscreen().catch(function(){});if(so&&so.unlock)so.unlock();}
+else if(so&&so.lock){lockTo(r,g).catch(function(){pend=r;if(g)msg();});}
+else if(g)msg();}catch(e){}
 try{if(window.Android&&Android.setOrientation)Android.setOrientation(r);}catch(e){}}
 var rs;try{rs=localStorage.getItem(RK);}catch(e){}
 rot(rs||'auto',false);
+document.addEventListener('pointerdown',function(){if(pend){var r=pend;pend=null;rot(r,false);if(r)lockTo(r,true).catch(function(){});}},true);
 rb.forEach(function(x){x.onclick=function(){rot(x.dataset.ro,true);};});
 })();
 </script>
